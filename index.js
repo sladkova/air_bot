@@ -1,5 +1,5 @@
 const {Telegraf, Markup} = require("telegraf"),
-        BOT_TOKEN = "6120988185:AAHuvW1mxJver4KfHhLqk_HLTTh4nWod5nw";
+        BOT_TOKEN = "2032874895:AAFdhZ_Qz5eaWFU2JQ6u4mkr9DaLFp0ig9A";
 
 const express = require("express");
 const mongoose = require("mongoose");
