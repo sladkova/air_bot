@@ -1,10 +1,33 @@
 const {Telegraf, Markup} = require("telegraf"),
-        BOT_TOKEN = "2032874895:AAFdhZ_Qz5eaWFU2JQ6u4mkr9DaLFp0ig9A";
+        BOT_TOKEN = "6120988185:AAHuvW1mxJver4KfHhLqk_HLTTh4nWod5nw";
+
+const express = require("express");
+const mongoose = require("mongoose");
 
 const axios = require("axios");
 const WEATHER_API_KEY = "7914d5a440960cfd5df3bd0388a7ad0f";
+const MONGODB_URI = "mongodb://localhost/airbotdb";
 
 const bot = new Telegraf(BOT_TOKEN);
+
+// Підключення до бази даних MongoDB
+mongoose.connect(MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "Помилка з'єднання з базою даних:"));
+db.once("open", () => {
+  console.log("З'єднання з базою даних встановлено");
+});
+
+// Створення моделі для збереження заявок
+const Application = mongoose.model("airdata", {
+  userId: Number,
+  username: String,
+  latitude: Number,
+  longitude: Number,
+  windSpeed: Number,
+  windDirection: String,
+  timestamp: { type: Date, default: Date.now },
+});
 
 bot.start((ctx) => {
   ctx.reply("Привіт, я допоможу відправити заявку про запах йоду. Натискай на кнопку або обирай меню", 
@@ -32,7 +55,7 @@ bot.command("jod", ctx => {
       });
 })
 
-// Обробник отримання локації
+
 bot.on('location', async (ctx) => {
   const { latitude, longitude } = ctx.update.message.location;
   const forecastUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${WEATHER_API_KEY}`;
@@ -43,8 +66,21 @@ bot.on('location', async (ctx) => {
     console.log(deg);
     const direction = getWindDirection(deg);
     let message = `На даний момент вітер дме з напрямку ${direction} зі швидкістю ${speed} м/c. \n`;
-    message += `ви знаходитеся по координатам ${latitude} , ${longitude} \n`;
+    message += `ви знаходитеся за координатами ${latitude} , ${longitude} \n`;
     message += `Дякуємо! Ваша заявка відправлена`;
+    
+    // Збереження заявки у базу даних
+    const application = new Application({
+      userId: ctx.from.id,
+      username: ctx.from.username,
+      latitude: latitude,
+      longitude: longitude,
+      windSpeed: speed,
+      windDirection: deg,
+    });
+    await application.save();
+
+
     ctx.reply(message);
   } catch (error) {
     console.error(error);
