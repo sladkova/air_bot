@@ -29,34 +29,67 @@ const Application = mongoose.model("airdata", {
   timestamp: { type: Date, default: Date.now },
 });
 
+const executedRequests = new Map();
+
+
 bot.start((ctx) => {
-  ctx.reply("Привіт, я допоможу відправити заявку про запах йоду. Натискай на кнопку або обирай меню", 
+  ctx.reply("Привіт, я допоможу відправити заявку про запах йоду в повітрі Запоріжжя. Натискай на велику кнопку під полем вводу. \n\n(кнопка доступна з мобільного пристрою)", 
     Markup
     .keyboard([
-        Markup.button.locationRequest('Відчуваю запах йоду. Відправити заявку.')
+        Markup.button.locationRequest('🌬️ Відчуваю запах йоду.\n\n📧 Відправити заявку.', false, "bold")
     ])
+   
     );
+    ctx.replyWithPhoto({
+      source: "pidkazka.jpeg"
+    });
+  
 });
 
-bot.command("jod", ctx => {
-    ctx.reply('Надішліть свою геолокацію', {
-        reply_markup: {
-          resize_keyboard: true,
-          one_time_keyboard: true,
-          keyboard: [
-            [
-              {
-                text: "Відправити геолокацію",
-                request_location: true
-              }
-            ]
-          ]
-        }
-      });
-})
+
+// bot.command("jod", ctx => {
+//   const userId = ctx.from.id;
+//   if (executedRequests.has(userId)) {
+//     const lastExecutionTime = executedRequests.get(userId);
+//     const currentTime = new Date().getTime();
+//     const timeDifference = currentTime - lastExecutionTime;
+//     const hoursDifference = Math.floor(timeDifference / (1000 * 60 * 60));
+
+//     if (hoursDifference < 1) {
+//       const minutesDifference = Math.floor(timeDifference / (1000 * 60));
+//       const remainingMinutes = 60 - minutesDifference;
+//       ctx.reply(`Ви вже відправляли заявку. Спробуйте ще раз через ${remainingMinutes} хвилин.`);
+//       return;
+//     }
+//   }
+
+//   ctx.reply('Натискайте велику кнопку під полем вводу.\n(кнопка доступна з мобільного пристрою)', 
+//     Markup
+//     .keyboard([
+//         Markup.button.locationRequest('🌬️ Відчуваю запах йоду.\n\n📧 Відправити заявку.', false, "bold")
+//     ])
+//   );
+
+//   // Оновлення мітки часу для користувача
+//   executedRequests.set(userId, new Date().getTime());
+// });
 
 
 bot.on('location', async (ctx) => {
+  const userId = ctx.from.id;
+  if (executedRequests.has(userId)) {
+    const lastExecutionTime = executedRequests.get(userId);
+    const currentTime = new Date().getTime();
+    const timeDifference = currentTime - lastExecutionTime;
+    const hoursDifference = Math.floor(timeDifference / (1000 * 60 * 60));
+
+    if (hoursDifference < 1) {
+      const minutesDifference = Math.floor(timeDifference / (1000 * 60));
+      const remainingMinutes = 60 - minutesDifference;
+      ctx.reply(`Ви вже відправляли заявку. Спробуйте ще раз через ${remainingMinutes} хвилин.`);
+      return;
+    }
+  }
   const { latitude, longitude } = ctx.update.message.location;
   const forecastUrl = `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${WEATHER_API_KEY}`;
   try {
@@ -86,6 +119,7 @@ bot.on('location', async (ctx) => {
     console.error(error);
     ctx.reply('Щось пішло не так! Спробуйте ще раз пізніше.');
   }
+  executedRequests.set(userId, new Date().getTime());
 });
 
 // Функція для отримання напрямку вітру у вигляді тексту
