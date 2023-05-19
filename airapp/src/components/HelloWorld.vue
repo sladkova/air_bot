@@ -9,7 +9,7 @@ defineProps({
   
 })
 onMounted(() => {
-  fetch("https://zpspace.com.ua:3000/api/airdata")
+  fetch("https://zpspace.com.ua/api/airdata")
           .then((response) => response.json())
           .then((data) => {
             const applicationsList = document.getElementById("applications-list");
