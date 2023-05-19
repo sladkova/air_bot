@@ -1,7 +1,6 @@
 const {Telegraf, Markup} = require("telegraf"),
-        BOT_TOKEN = "6120988185:AAHuvW1mxJver4KfHhLqk_HLTTh4nWod5nw";
-
-        //2032874895:AAFdhZ_Qz5eaWFU2JQ6u4mkr9DaLFp0ig9A
+        BOT_TOKEN = "6120988185:AAHuvW1mxJver4KfHhLqk_HLTTh4nWod5nw"; //airbot
+      //  BOT_TOKEN = "2032874895:AAFdhZ_Qz5eaWFU2JQ6u4mkr9DaLFp0ig9A"; //sladkova
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -42,12 +41,13 @@ bot.start((ctx) => {
     ])
    
     );
-    ctx.replyWithPhoto({
-      source: "pidkazka.jpeg"
-    });
-  
 });
 
+bot.hears(/.*/, (ctx) => {
+  ctx.replyWithPhoto({
+    source: "pidkazka.jpeg"
+  });
+})
 
 // bot.command("jod", ctx => {
 //   const userId = ctx.from.id;
