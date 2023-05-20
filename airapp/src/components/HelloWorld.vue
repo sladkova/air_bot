@@ -56,7 +56,7 @@ onMounted(() => {
               });
 
               const listItem = document.createElement("tr");
-              listItem.innerHTML = `<td> ${application.username} </td><td> ${application.latitude}, ${application.longitude}</td><td> ${application.windSpeed} м/c </td><td>  ${formattedDate} ${formattedTime} </td>`;
+              listItem.innerHTML = `<td> ${application.username ?? '-'}  </td><td> ${application.latitude}, ${application.longitude}</td><td> ${application.windSpeed} м/c </td><td>  ${formattedDate} ${formattedTime} </td>`;
               applicationsList.appendChild(listItem);
             });
 
