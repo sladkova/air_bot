@@ -34,7 +34,7 @@ app.use((req, res, next) => {
 // API для отримання даних з бази даних
 app.route("/api/airdata").get(async (req, res) => {
   try {
-    const applications = await AirModel.find().exec();
+    const applications = await AirModel.find().sort({ timestamp: -1 }).exec();
     res.json(applications);
   } catch (error) {
     console.error(error);

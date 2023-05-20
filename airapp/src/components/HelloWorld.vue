@@ -1,23 +1,48 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet' 
 
 let dateOfApplication = ref(null);
+const lineCoordinates = ref([])
+
+const calculateLineCoordinates = (pointCoordinates, windDirection, lineLength) => {
+  const windDirectionRad = windDirection * (Math.PI / 180)
+  const endPointLat = pointCoordinates[0] + lineLength * Math.cos(windDirectionRad)
+  const endPointLng = pointCoordinates[1] + lineLength * Math.sin(windDirectionRad)
+  return [pointCoordinates, [endPointLat, endPointLng]]
+}
 
 defineProps({
   msg: String,
   
 })
 onMounted(() => {
+
+  const map = L.map('mapContainer', {
+    center: [47.8388, 35.1396], // Координати Запоріжжя
+    zoom: 10, // Рівень масштабування,
+    trackResize: false
+  })
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>'}).addTo(map);
+
+
   fetch("https://zpspace.com.ua/api/airdata")
           .then((response) => response.json())
           .then((data) => {
             const applicationsList = document.getElementById("applications-list");
-            
 
             data.forEach((application) => {
               dateOfApplication = new Date(application.timestamp);
               dateOfApplication.setHours(dateOfApplication.getHours() + 1);
+
+              const coordinates = [application.latitude, application.longitude]
+              const windDirection = application.windDirection
+              const lineLength = 0.3
+
+              const coordinatesWithLine = calculateLineCoordinates(coordinates, windDirection, lineLength)
+              lineCoordinates.value.push(coordinatesWithLine)
 
               const formattedDate = dateOfApplication.toLocaleString(undefined, {
                 year: 'numeric',
@@ -30,25 +55,48 @@ onMounted(() => {
                 second: 'numeric',
               });
 
-              const listItem = document.createElement("li");
-              listItem.textContent = `Користувач ${application.username} (ID: ${application.userId}) відправив заявку з координатами ${application.latitude}, ${application.longitude}, швидкістю вітру ${application.windSpeed} м/c та напрямком ${application.windDirection} час створення заявки   ${formattedDate} ${formattedTime}`;
-    
+              const listItem = document.createElement("tr");
+              listItem.innerHTML = `<td> ${application.username} </td><td> ${application.latitude}, ${application.longitude}</td><td> ${application.windSpeed} м/c </td><td>  ${formattedDate} ${formattedTime} </td>`;
               applicationsList.appendChild(listItem);
             });
+
+            lineCoordinates.value.forEach((line) => {
+                L.polyline(line, { color: 'red' }).addTo(map);
+
+                L.marker(line[0], {
+                  icon: L.icon({
+                    iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
+                    iconSize: [38, 95],
+                    iconAnchor: [22, 94],
+                    popupAnchor: [-3, -76],
+                  })
+                }).addTo(map);
+            })
           })
           .catch((error) => {
             console.error("Помилка отримання даних:", error);
           });
+
  })
+
+
 </script>
 
 <template>
+      <div id="mapContainer" style="height: 800px; width: 800px;"></div>
+
       <h1>Заявки</h1>
-      <ul id="applications-list"></ul>
+      <table id="applications-list">
+        <tr><td>Користувач</td><td> відправив заявку з координатами</td><td> швидкістю вітру  м/c </td><td>час створення заявки  </td></tr>
+      </table>
 </template>
 
-<style scoped>
+<style>
 .read-the-docs {
   color: #888;
+}
+
+tr td {
+  border: 1px #888 solid;
 }
 </style>
