@@ -5,6 +5,9 @@ import L from 'leaflet'
 
 let dateOfApplication = ref(null);
 const lineCoordinates = ref([])
+const markers = ref([]) 
+const lines = ref([]) 
+let map 
 
 const calculateLineCoordinates = (pointCoordinates, windDirection, lineLength) => {
   const windDirectionRad = windDirection * (Math.PI / 180)
@@ -19,7 +22,7 @@ defineProps({
 })
 onMounted(() => {
 
-  const map = L.map('mapContainer', {
+    map = L.map('mapContainer', {
     center: [47.8388, 35.1396], // Координати Запоріжжя
     zoom: 10, // Рівень масштабування,
     trackResize: false
@@ -29,66 +32,81 @@ onMounted(() => {
 
 
   fetch("https://zpspace.com.ua/api/airdata")
-          .then((response) => response.json())
-          .then((data) => {
-            const applicationsList = document.getElementById("applications-list");
+    .then((response) => response.json())
+    .then((data) => {
+      const applicationsList = document.getElementById("applications-list");
 
-            data.forEach((application) => {
-              dateOfApplication = new Date(application.timestamp);
-              dateOfApplication.setHours(dateOfApplication.getHours() + 1);
+      data.forEach((application) => {
+        dateOfApplication = new Date(application.timestamp);
+        dateOfApplication.setHours(dateOfApplication.getHours() + 1);
 
-              const coordinates = [application.latitude, application.longitude]
-              const windDirection = application.windDirection
-              const lineLength = 0.3
+        const coordinates = [application.latitude, application.longitude]
+        const windDirection = application.windDirection
+        const lineLength = 0.3
 
-              const coordinatesWithLine = calculateLineCoordinates(coordinates, windDirection, lineLength)
-              lineCoordinates.value.push(coordinatesWithLine)
+        const coordinatesWithLine = calculateLineCoordinates(coordinates, windDirection, lineLength)
+        lineCoordinates.value.push(coordinatesWithLine)
 
-              const formattedDate = dateOfApplication.toLocaleString(undefined, {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-              });
-              const formattedTime = dateOfApplication.toLocaleTimeString(undefined, {
-                hour: 'numeric',
-                minute: 'numeric',
-                second: 'numeric',
-              });
+        const formattedDate = dateOfApplication.toLocaleString(undefined, {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+        });
+        const formattedTime = dateOfApplication.toLocaleTimeString(undefined, {
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+        });
 
-              const listItem = document.createElement("tr");
-              listItem.innerHTML = `<td> ${application.username ?? '-'}  </td><td> ${application.latitude}, ${application.longitude}</td><td> ${application.windSpeed} м/c </td><td>  ${formattedDate} ${formattedTime} </td>`;
-              applicationsList.appendChild(listItem);
-            });
+        const listItem = document.createElement("tr");
+        listItem.innerHTML = `<td> ${application.username ?? '-'}  </td><td> ${application.latitude}, ${application.longitude}</td><td> ${application.windSpeed} м/c </td><td>  ${formattedDate} ${formattedTime} </td>`;
+        applicationsList.appendChild(listItem);
 
-            lineCoordinates.value.forEach((line) => {
-                L.polyline(line, { color: 'red' }).addTo(map);
+        const line = L.polyline(coordinatesWithLine, { color: 'red' }).addTo(map);
+        lines.value.push(line); 
 
-                L.marker(line[0], {
-                  icon: L.icon({
-                    iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
-                    iconSize: [38, 95],
-                    iconAnchor: [22, 94],
-                    popupAnchor: [-3, -76],
-                  })
-                }).addTo(map);
-            })
+        const marker = L.marker(coordinatesWithLine[0], {
+          icon: L.icon({
+            iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
+            iconSize: [38, 95],
+            iconAnchor: [22, 94],
+            popupAnchor: [-3, -76],
           })
-          .catch((error) => {
-            console.error("Помилка отримання даних:", error);
-          });
+        }).addTo(map);
+        markers.value.push(marker); 
+      });
+    })
+    .catch((error) => {
+      console.error("Помилка отримання даних:", error);
+    });
 
- })
+})
 
 
+const clearMap = () => {
+  markers.value.forEach((marker) => {
+    marker.removeFrom(map);
+  });
+  markers.value = [];
+
+  lines.value.forEach((line) => {
+    line.removeFrom(map);
+  });
+  lines.value = [];
+}
 </script>
 
 <template>
-      <div id="mapContainer" style="height: 800px; width: 800px;"></div>
+  <div>
+    <div id="mapContainer" style="height: 800px; width: 800px;"></div>
 
-      <h1>Заявки</h1>
-      <table id="applications-list">
-        <tr><td>Користувач</td><td> відправив заявку з координатами</td><td> швидкістю вітру  м/c </td><td>час створення заявки  </td></tr>
-      </table>
+    <h1>Заявки</h1>
+    <table id="applications-list">
+      <tr><td>Користувач</td><td> відправив заявку з координатами</td><td> швидкістю вітру  м/c </td><td>час створення заявки  </td></tr>
+    </table>
+
+    <button @click="clearMap">Очистити карту</button>
+  </div>
 </template>
 
 <style>
