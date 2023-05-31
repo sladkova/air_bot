@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import 'leaflet/dist/leaflet.css'
-import L from 'leaflet' 
+import L from 'leaflet'
 
 let dateOfApplication = ref(null);
 const lineCoordinates = ref([])
@@ -11,20 +11,19 @@ let map
 
 const calculateLineCoordinates = (pointCoordinates, windDirection, lineLength) => {
   const windDirectionRad = windDirection * (Math.PI / 180)
-  const endPointLat = pointCoordinates[0] + lineLength * Math.cos(windDirectionRad)
-  const endPointLng = pointCoordinates[1] + lineLength * Math.sin(windDirectionRad)
+  const endPointLat = pointCoordinates[0] + (lineLength / 111.12) * Math.cos(windDirectionRad) // Перетворення відстані на координати
+  const endPointLng = pointCoordinates[1] + (lineLength / (111.12 * Math.cos(pointCoordinates[0] * (Math.PI / 180)))) * Math.sin(windDirectionRad) // Перетворення відстані на координати
   return [pointCoordinates, [endPointLat, endPointLng]]
 }
 
 defineProps({
   msg: String,
-  
+
 })
 onMounted(() => {
-
-    map = L.map('mapContainer', {
+  map = L.map('mapContainer', {
     center: [47.8388, 35.1396], // Координати Запоріжжя
-    zoom: 10, // Рівень масштабування,
+    zoom: 10, // Рівень масштабування
     trackResize: false
   })
 
@@ -42,9 +41,9 @@ onMounted(() => {
 
         const coordinates = [application.latitude, application.longitude]
         const windDirection = application.windDirection
-        const lineLength = 0.3
+        const lineDistance = 10 // Відстань у кілометрах
 
-        const coordinatesWithLine = calculateLineCoordinates(coordinates, windDirection, lineLength)
+        const coordinatesWithLine = calculateLineCoordinates(coordinates, windDirection, lineDistance)
         lineCoordinates.value.push(coordinatesWithLine)
 
         const formattedDate = dateOfApplication.toLocaleString(undefined, {
@@ -65,13 +64,13 @@ onMounted(() => {
         const line = L.polyline(coordinatesWithLine, { color: 'red' }).addTo(map);
         lines.value.push(line); 
 
-        const marker = L.marker(coordinatesWithLine[0], {
-          icon: L.icon({
-            iconUrl: 'https://leafletjs.com/examples/custom-icons/leaf-green.png',
-            iconSize: [38, 95],
-            iconAnchor: [22, 94],
-            popupAnchor: [-3, -76],
-          })
+        const marker = L.circleMarker(coordinatesWithLine[0], {
+          radius: 4,
+          fillColor: 'white',
+          color: 'black',
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 1
         }).addTo(map);
         markers.value.push(marker); 
       });
@@ -105,7 +104,7 @@ const clearMap = () => {
       <tr><td>Користувач</td><td> відправив заявку з координатами</td><td> швидкістю вітру  м/c </td><td>час створення заявки  </td></tr>
     </table>
 
-    <button @click="clearMap">Очистити карту</button>
+    <!-- <button @click="clearMap">Очистити карту</button> -->
   </div>
 </template>
 
