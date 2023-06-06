@@ -3,6 +3,14 @@ import { ref, onMounted } from "vue";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import moment from "moment/min/moment-with-locales";
+import {
+  endOfMonth,
+  endOfYear,
+  startOfMonth,
+  startOfYear,
+  subMonths,
+} from "date-fns";
+import "@vuepic/vue-datepicker/dist/main.css";
 
 let dateOfApplication = ref(null);
 const lineCoordinates = ref([]);
@@ -10,6 +18,32 @@ const markers = ref([]);
 const lines = ref([]);
 let map;
 let fetchedData;
+
+const choisedDateRange = ref();
+
+const presetRanges = ref([
+  { label: "Today", range: [new Date(), new Date()] },
+  {
+    label: "This month",
+    range: [startOfMonth(new Date()), endOfMonth(new Date())],
+  },
+  {
+    label: "Last month",
+    range: [
+      startOfMonth(subMonths(new Date(), 1)),
+      endOfMonth(subMonths(new Date(), 1)),
+    ],
+  },
+  {
+    label: "This year",
+    range: [startOfYear(new Date()), endOfYear(new Date())],
+  },
+  {
+    label: "This year (slot)",
+    range: [startOfYear(new Date()), endOfYear(new Date())],
+    slot: "yearly",
+  },
+]);
 
 const calculateLineCoordinates = (
   pointCoordinates,
@@ -126,28 +160,34 @@ function removeChild() {
 }
 
 function filterByDate(
-  isFiltered = true,
+  isFilteredBySuggested = false,
   NeededFilter = "day",
-  todayDate = new Date()
+  isFilteredByChoice = false,
+  startDate = new Date(),
+  endDate = new Date()
 ) {
+  removeChild();
+  clearMap();
+
   const applicationsList = document.getElementById("applications-list");
 
-  const lastDayOfPrevWeek = moment(todayDate)
+  const lastDayOfPrevWeek = moment(new Date())
     .subtract(1, `${NeededFilter}`)
     .endOf(`${NeededFilter}`);
 
-  console.log(lastDayOfPrevWeek);
-
-  removeChild();
-  clearMap();
   fetchedData.forEach((application) => {
-    if (isFiltered) {
+    if (isFilteredBySuggested) {
       if (
         !moment(application.timestamp).isBetween(
           lastDayOfPrevWeek._d,
           lastDayOfPrevWeek._i
         )
       ) {
+        return;
+      }
+    }
+    if (isFilteredByChoice) {
+      if (!moment(application.timestamp).isBetween(startDate, endDate)) {
         return;
       }
     }
@@ -211,7 +251,7 @@ function filterByDate(
         :class="isFilterApplied ? '  visible' : ' invisible'"
       >
         <button
-          @click="filterByDate(false), (isFilterApplied = false)"
+          @click="filterByDate(), (isFilterApplied = false)"
           :class="
             isFilterApplied
               ? ' visible h-[45px] '
@@ -233,7 +273,8 @@ function filterByDate(
           За поточний місяць
         </button>
         <button @click="showedInputFilter = !showedInputFilter">
-          Вибрати дату
+          <p :class="{ hidden: showedInputFilter }">Вибрати дату</p>
+          <p :class="{ hidden: !showedInputFilter }">Закрити вибір дати</p>
         </button>
       </div>
     </div>
@@ -241,17 +282,28 @@ function filterByDate(
       class="flex flex-row justify-center items-center transition-all gap-x-[30px]"
       :class="showedInputFilter ? 'h-[50px] visible' : 'h-[0px] invisible'"
     >
-      <input
-        :class="showedInputFilter ? ' visible' : ' invisible'"
-        type="date"
-        name=""
-        id=""
-        :v-model="inputedDate"
-        class="py-[5px] px-[10px] rounded-[30px]"
-      />
+      <VueDatePicker
+        v-model="choisedDateRange"
+        range
+        :preset-ranges="presetRanges"
+        auto-apply
+      >
+        <template #yearly="{ label, range, presetDateRange }">
+          <span @click="presetDateRange(range)">{{ label }}</span>
+        </template>
+      </VueDatePicker>
       <button
         :class="showedInputFilter ? ' visible' : ' invisible'"
-        @click="console.log(inputedDate), (isFilterApplied = true)"
+        @click="
+          filterByDate(
+            false,
+            '',
+            true,
+            choisedDateRange[0],
+            choisedDateRange[1]
+          ),
+            (isFilterApplied = true)
+        "
       >
         Знайти
       </button>
