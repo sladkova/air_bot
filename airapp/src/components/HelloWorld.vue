@@ -82,57 +82,7 @@ onMounted(() => {
     .then((response) => response.json())
     .then((data) => {
       fetchedData = data;
-      const applicationsList = document.getElementById("applications-list");
-
-      data.forEach((application) => {
-        dateOfApplication = new Date(application.timestamp);
-        dateOfApplication.setHours(dateOfApplication.getHours() + 1);
-
-        const coordinates = [application.latitude, application.longitude];
-        const windDirection = application.windDirection;
-        const lineDistance = 10; // Відстань у кілометрах
-
-        const coordinatesWithLine = calculateLineCoordinates(
-          coordinates,
-          windDirection,
-          lineDistance
-        );
-        lineCoordinates.value.push(coordinatesWithLine);
-
-        const formattedDate = dateOfApplication.toLocaleString(undefined, {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        });
-        const formattedTime = dateOfApplication.toLocaleTimeString(undefined, {
-          hour: "numeric",
-          minute: "numeric",
-          second: "numeric",
-        });
-
-        const listItem = document.createElement("tr");
-        listItem.innerHTML = `<td> ${application.username ?? "-"}  </td><td> ${
-          application.latitude
-        }, ${application.longitude}</td><td> ${
-          application.windSpeed
-        } м/c </td><td>  ${formattedDate} ${formattedTime} </td>`;
-        applicationsList.appendChild(listItem);
-
-        const line = L.polyline(coordinatesWithLine, { color: "red" }).addTo(
-          map
-        );
-        lines.value.push(line);
-
-        const marker = L.circleMarker(coordinatesWithLine[0], {
-          radius: 4,
-          fillColor: "white",
-          color: "black",
-          weight: 1,
-          opacity: 1,
-          fillOpacity: 1,
-        }).addTo(map);
-        markers.value.push(marker);
-      });
+      filterByDate(false);
     })
     .catch((error) => {
       console.error("Помилка отримання даних:", error);
@@ -156,6 +106,17 @@ function removeChild() {
   const clarificationList = document.getElementById("clarification");
   while (applicationsList.lastChild != clarificationList) {
     applicationsList.removeChild(applicationsList.lastChild);
+  }
+}
+
+function checkIfTheTableIsEmpty() {
+  const applicationsList = document.getElementById("applications-list");
+  const clarificationList = document.getElementById("clarification");
+  if (applicationsList.lastChild == clarificationList) {
+    console.log("empty");
+    const listItem = document.createElement("tr");
+    listItem.innerHTML = `<td> - </td><td> - </td><td> - </td><td> - </td>`;
+    applicationsList.appendChild(listItem);
   }
 }
 
@@ -237,6 +198,7 @@ function filterByDate(
     }).addTo(map);
     markers.value.push(marker);
   });
+  checkIfTheTableIsEmpty();
 }
 </script>
 
