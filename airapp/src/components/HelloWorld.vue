@@ -229,7 +229,7 @@ function filterByDate(
           За поточний день
         </button>
         <button @click="filterByDate(true, 'Week'), (isFilterApplied = true)">
-          За поточну неділю
+          За поточний тиждень
         </button>
         <button @click="filterByDate(true, 'Month'), (isFilterApplied = true)">
           За поточний місяць
