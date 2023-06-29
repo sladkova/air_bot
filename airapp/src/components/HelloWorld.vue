@@ -178,10 +178,11 @@ function filterByDate(
     }
 
     if(selectedSmellFilterType.value !== ''){
-      if (application.kind_of_smell == selectedSmellFilterType) {
+      if (application.kind_of_smell !== selectedSmellFilterType) {
         return;
       }
     }
+
     dateOfApplication = new Date(application.timestamp);
     dateOfApplication.setHours(dateOfApplication.getHours() + 1);
 
@@ -268,7 +269,14 @@ function filterByDate(
           <p :class="{ hidden: showedInputFilter }">Вибрати дату</p>
           <p :class="{ hidden: !showedInputFilter }">Закрити вибір дати</p>
         </button>
-        <select data-te-select-init data-te-select-placeholder="За типом сморіду" v-model="selectedSmellFilterType" class="bg-gray-50 border border-gray-300" @click="filterByDate(false, selectedDateFilterType, true)">
+        <select
+          data-te-select-init
+          data-te-select-placeholder="За типом сморіду"
+          v-model="selectedSmellFilterType"
+          class="bg-gray-50"
+          :class="{ selected: selectedSmellFilterType !== '' }"
+          @change="filterByDate(false, selectedDateFilterType, true)"
+        >
           <option value="">За типом сморіду</option>
           <option value="йод">йод</option>
           <option value="аміак">аміак</option>
