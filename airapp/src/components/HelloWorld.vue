@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import moment from "moment/min/moment-with-locales";
@@ -60,11 +60,19 @@ const calculateLineCoordinates = (
   return [pointCoordinates, [endPointLat, endPointLng]];
 };
 
-defineProps({
-  msg: String,
-  showedInputFilter: Boolean,
-  isFilterApplied: Boolean,
-});
+// defineProps({
+//   msg: String,
+//   showedInputFilter: Boolean,
+//   isFilterApplied: Boolean,
+// });
+
+const showedInputFilter = ref(false)
+
+const selectedDateFilterType = ref(null)
+const selectedSmellFilterType = ref('');
+
+const isAnyFilterSelected = computed(() => selectedDateFilterType.value != null || selectedSmellFilterType.value != '')
+
 onMounted(() => {
   map = L.map("mapContainer", {
     center: [47.8388, 35.1396], // Координати Запоріжжя
@@ -82,7 +90,7 @@ onMounted(() => {
     .then((response) => response.json())
     .then((data) => {
       fetchedData = data;
-      filterByDate(false);
+      filterByDate(true, 'Day');
     })
     .catch((error) => {
       console.error("Помилка отримання даних:", error);
@@ -120,9 +128,16 @@ function checkIfTheTableIsEmpty() {
   }
 }
 
+function clearFilters() {
+  showedInputFilter.value = false
+  selectedSmellFilterType.value = ''
+
+  filterByDate()
+}
+
 function filterByDate(
   isFilteredBySuggested = false,
-  NeededFilter = "day",
+  neededDateFilterType = null,
   isFilteredByChoice = false,
   startDate = new Date(),
   endDate = new Date()
@@ -130,11 +145,19 @@ function filterByDate(
   removeChild();
   clearMap();
 
+  if (neededDateFilterType !== 'Range') {
+    showedInputFilter.value = false
+  }
+
+  selectedDateFilterType.value = neededDateFilterType
+
   const applicationsList = document.getElementById("applications-list");
 
-  const lastDayOfPrevWeek = moment(new Date())
-    .subtract(1, `${NeededFilter}`)
-    .endOf(`${NeededFilter}`);
+  const lastDayOfPrevWeek = isFilteredBySuggested
+    ? moment(new Date())
+      .subtract(1, `${neededDateFilterType}`)
+      .endOf(`${neededDateFilterType}`)
+    : null;
 
   fetchedData.forEach((application) => {
     if (isFilteredBySuggested) {
@@ -147,8 +170,15 @@ function filterByDate(
         return;
       }
     }
+
     if (isFilteredByChoice) {
       if (!moment(application.timestamp).isBetween(startDate, endDate)) {
+        return;
+      }
+    }
+
+    if(selectedSmellFilterType.value !== ''){
+      if (application.kind_of_smell == selectedSmellFilterType) {
         return;
       }
     }
@@ -182,7 +212,7 @@ function filterByDate(
       application.latitude
     }, ${application.longitude}</td><td> ${
       application.windSpeed
-    } м/c </td><td>  ${formattedDate} ${formattedTime} </td>`;
+    } м/c </td><td>  ${formattedDate} ${formattedTime} </td><td> ${application.kind_of_smell ?? "-"}</td>`;
     applicationsList.appendChild(listItem);
 
     const line = L.polyline(coordinatesWithLine, { color: "red" }).addTo(map);
@@ -210,12 +240,12 @@ function filterByDate(
       <h3>Фільтри:</h3>
       <div
         class="flex justify-center transition-all duration-300"
-        :class="isFilterApplied ? '  visible' : ' invisible'"
+        :class="isAnyFilterSelected ? '  visible' : ' invisible'"
       >
         <button
-          @click="filterByDate(), (isFilterApplied = false)"
+          @click="clearFilters()"
           :class="
-            isFilterApplied
+            isAnyFilterSelected
               ? ' visible h-[45px] '
               : ' h-[0px] p-[0px] invisible'
           "
@@ -225,19 +255,30 @@ function filterByDate(
         </button>
       </div>
       <div class="flex flex-row justify-evenly">
-        <button @click="filterByDate(true, 'Day'), (isFilterApplied = true)">
+        <button @click="filterByDate(true, 'Day')" :class="{ selected: selectedDateFilterType === 'Day' }">
           За поточний день
         </button>
-        <button @click="filterByDate(true, 'Week'), (isFilterApplied = true)">
-          За поточну неділю
+        <button @click="filterByDate(true, 'Week')" :class="{ selected: selectedDateFilterType === 'Week' }">
+          За поточний тиждень
         </button>
-        <button @click="filterByDate(true, 'Month'), (isFilterApplied = true)">
+        <button @click="filterByDate(true, 'Month')" :class="{ selected: selectedDateFilterType === 'Month' }">
           За поточний місяць
         </button>
         <button @click="showedInputFilter = !showedInputFilter">
           <p :class="{ hidden: showedInputFilter }">Вибрати дату</p>
           <p :class="{ hidden: !showedInputFilter }">Закрити вибір дати</p>
         </button>
+        <select data-te-select-init data-te-select-placeholder="За типом сморіду" v-model="selectedSmellFilterType" class="bg-gray-50 border border-gray-300" @click="filterByDate(false, selectedDateFilterType, true)">
+          <option value="">За типом сморіду</option>
+          <option value="йод">йод</option>
+          <option value="аміак">аміак</option>
+          <option value="сірководень">сірководень</option>
+          <option value="сірка">сірка</option>
+          <option value="металургійний гар">металургійний гар</option>
+          <option value="горілий пластик">горілий пластик</option>
+          <option value="хімія">хімія</option>
+          <option value="гниль">гниль</option>
+        </select>
       </div>
     </div>
     <div
@@ -259,12 +300,11 @@ function filterByDate(
         @click="
           filterByDate(
             false,
-            '',
-            true,
+            'Range',
+            false,
             choisedDateRange[0],
             choisedDateRange[1]
-          ),
-            (isFilterApplied = true)
+          )
         "
       >
         Знайти
@@ -277,6 +317,7 @@ function filterByDate(
           <td>Відправив заявку з координатами</td>
           <td>Швидкість вітру</td>
           <td>Час створення заявки</td>
+          <td>Тип сморіду</td>
         </tr>
       </table>
     </div>
