@@ -71,7 +71,7 @@ const showedInputFilter = ref(false)
 const selectedDateFilterType = ref(null)
 const selectedSmellFilterType = ref('');
 
-const isAnyFilterSelected = computed(() => selectedDateFilterType.value != null || selectedSmellFilterType.value != '')
+const isAnyFilterSelected = computed(() => selectedDateFilterType.value != null || selectedSmellFilterType.value !== '')
 
 onMounted(() => {
   map = L.map("mapContainer", {
@@ -90,7 +90,7 @@ onMounted(() => {
     .then((response) => response.json())
     .then((data) => {
       fetchedData = data;
-      filterByDate(true, 'Day');
+      filterApplications('Day');
     })
     .catch((error) => {
       console.error("Помилка отримання даних:", error);
@@ -123,7 +123,7 @@ function checkIfTheTableIsEmpty() {
   if (applicationsList.lastChild == clarificationList) {
     console.log("empty");
     const listItem = document.createElement("tr");
-    listItem.innerHTML = `<td> - </td><td> - </td><td> - </td><td> - </td>`;
+    listItem.innerHTML = `<td> - </td><td> - </td><td> - </td><td> - </td><td> - </td>`;
     applicationsList.appendChild(listItem);
   }
 }
@@ -132,31 +132,29 @@ function clearFilters() {
   showedInputFilter.value = false
   selectedSmellFilterType.value = ''
 
-  filterByDate()
+  filterApplications()
 }
 
-function filterByDate(
-  isFilteredBySuggested = false,
-  neededDateFilterType = null,
-  isFilteredByChoice = false,
-  startDate = new Date(),
-  endDate = new Date()
-) {
+// dateFilterType: null, Day, Week, Month, Range
+function filterApplications(dateFilterType = null) {
   removeChild();
   clearMap();
 
-  if (neededDateFilterType !== 'Range') {
+  const isFilteredBySuggested = dateFilterType !== null && dateFilterType !== 'Range';
+  const isFilteredByChoice = dateFilterType === 'Range';
+
+  if (dateFilterType !== 'Range') {
     showedInputFilter.value = false
   }
 
-  selectedDateFilterType.value = neededDateFilterType
+  selectedDateFilterType.value = dateFilterType
 
   const applicationsList = document.getElementById("applications-list");
 
   const lastDayOfPrevWeek = isFilteredBySuggested
     ? moment(new Date())
-      .subtract(1, `${neededDateFilterType}`)
-      .endOf(`${neededDateFilterType}`)
+      .subtract(1, `${dateFilterType}`)
+      .endOf(`${dateFilterType}`)
     : null;
 
   fetchedData.forEach((application) => {
@@ -172,13 +170,13 @@ function filterByDate(
     }
 
     if (isFilteredByChoice) {
-      if (!moment(application.timestamp).isBetween(startDate, endDate)) {
+      if (!moment(application.timestamp).isBetween(choisedDateRange[0], choisedDateRange[1])) {
         return;
       }
     }
 
-    if(selectedSmellFilterType.value !== ''){
-      if (application.kind_of_smell !== selectedSmellFilterType) {
+    if (selectedSmellFilterType.value !== ''){
+      if (application.kind_of_smell !== selectedSmellFilterType.value) {
         return;
       }
     }
@@ -256,13 +254,13 @@ function filterByDate(
         </button>
       </div>
       <div class="flex flex-row justify-evenly">
-        <button @click="filterByDate(true, 'Day')" :class="{ selected: selectedDateFilterType === 'Day' }">
+        <button @click="filterApplications('Day')" :class="{ selected: selectedDateFilterType === 'Day' }">
           За поточний день
         </button>
-        <button @click="filterByDate(true, 'Week')" :class="{ selected: selectedDateFilterType === 'Week' }">
+        <button @click="filterApplications('Week')" :class="{ selected: selectedDateFilterType === 'Week' }">
           За поточний тиждень
         </button>
-        <button @click="filterByDate(true, 'Month')" :class="{ selected: selectedDateFilterType === 'Month' }">
+        <button @click="filterApplications('Month')" :class="{ selected: selectedDateFilterType === 'Month' }">
           За поточний місяць
         </button>
         <button @click="showedInputFilter = !showedInputFilter">
@@ -275,7 +273,7 @@ function filterByDate(
           v-model="selectedSmellFilterType"
           class="bg-gray-50"
           :class="{ selected: selectedSmellFilterType !== '' }"
-          @change="filterByDate(false, selectedDateFilterType, true)"
+          @change="filterApplications(selectedDateFilterType)"
         >
           <option value="">За типом сморіду</option>
           <option value="йод">йод</option>
@@ -305,15 +303,7 @@ function filterByDate(
       </VueDatePicker>
       <button
         :class="showedInputFilter ? ' visible' : ' invisible'"
-        @click="
-          filterByDate(
-            false,
-            'Range',
-            false,
-            choisedDateRange[0],
-            choisedDateRange[1]
-          )
-        "
+        @click="filterApplications('Range')"
       >
         Знайти
       </button>
