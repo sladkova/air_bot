@@ -3,13 +3,7 @@ import { ref, onMounted, computed } from "vue";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import moment from "moment/min/moment-with-locales";
-import {
-  endOfMonth,
-  endOfYear,
-  startOfMonth,
-  startOfYear,
-  subMonths,
-} from "date-fns";
+import { endOfMonth, endOfYear, startOfMonth, startOfYear, subMonths } from "date-fns";
 import "@vuepic/vue-datepicker/dist/main.css";
 
 let dateOfApplication = ref(null);
@@ -29,10 +23,7 @@ const presetRanges = ref([
   },
   {
     label: "Last month",
-    range: [
-      startOfMonth(subMonths(new Date(), 1)),
-      endOfMonth(subMonths(new Date(), 1)),
-    ],
+    range: [startOfMonth(subMonths(new Date(), 1)), endOfMonth(subMonths(new Date(), 1))],
   },
   {
     label: "This year",
@@ -45,11 +36,7 @@ const presetRanges = ref([
   },
 ]);
 
-const calculateLineCoordinates = (
-  pointCoordinates,
-  windDirection,
-  lineLength
-) => {
+const calculateLineCoordinates = (pointCoordinates, windDirection, lineLength) => {
   const windDirectionRad = windDirection * (Math.PI / 180);
   const endPointLat =
     pointCoordinates[0] + (lineLength / 111.12) * Math.cos(windDirectionRad); // Перетворення відстані на координати
@@ -66,12 +53,14 @@ const calculateLineCoordinates = (
 //   isFilterApplied: Boolean,
 // });
 
-const showedInputFilter = ref(false)
+const showedInputFilter = ref(false);
 
-const selectedDateFilterType = ref(null)
-const selectedSmellFilterType = ref('');
+const selectedDateFilterType = ref(null);
+const selectedSmellFilterType = ref("");
 
-const isAnyFilterSelected = computed(() => selectedDateFilterType.value != null || selectedSmellFilterType.value !== '')
+const isAnyFilterSelected = computed(
+  () => selectedDateFilterType.value != null || selectedSmellFilterType.value !== ""
+);
 
 onMounted(() => {
   map = L.map("mapContainer", {
@@ -90,7 +79,7 @@ onMounted(() => {
     .then((response) => response.json())
     .then((data) => {
       fetchedData = data;
-      filterApplications('Day');
+      filterApplications("Day");
     })
     .catch((error) => {
       console.error("Помилка отримання даних:", error);
@@ -129,10 +118,10 @@ function checkIfTheTableIsEmpty() {
 }
 
 function clearFilters() {
-  showedInputFilter.value = false
-  selectedSmellFilterType.value = ''
+  showedInputFilter.value = false;
+  selectedSmellFilterType.value = "";
 
-  filterApplications()
+  filterApplications();
 }
 
 // dateFilterType: null, Day, Week, Month, Range
@@ -140,21 +129,19 @@ function filterApplications(dateFilterType = null) {
   removeChild();
   clearMap();
 
-  const isFilteredBySuggested = dateFilterType !== null && dateFilterType !== 'Range';
-  const isFilteredByChoice = dateFilterType === 'Range';
+  const isFilteredBySuggested = dateFilterType !== null && dateFilterType !== "Range";
+  const isFilteredByChoice = dateFilterType === "Range";
 
-  if (dateFilterType !== 'Range') {
-    showedInputFilter.value = false
+  if (dateFilterType !== "Range") {
+    showedInputFilter.value = false;
   }
 
-  selectedDateFilterType.value = dateFilterType
+  selectedDateFilterType.value = dateFilterType;
 
   const applicationsList = document.getElementById("applications-list");
 
   const lastDayOfPrevWeek = isFilteredBySuggested
-    ? moment(new Date())
-      .subtract(1, `${dateFilterType}`)
-      .endOf(`${dateFilterType}`)
+    ? moment(new Date()).subtract(1, `${dateFilterType}`).endOf(`${dateFilterType}`)
     : null;
 
   fetchedData.forEach((application) => {
@@ -170,12 +157,17 @@ function filterApplications(dateFilterType = null) {
     }
 
     if (isFilteredByChoice) {
-      if (!moment(application.timestamp).isBetween(choisedDateRange.value[0], choisedDateRange.value[1])) {
+      if (
+        !moment(application.timestamp).isBetween(
+          choisedDateRange.value[0],
+          choisedDateRange.value[1]
+        )
+      ) {
         return;
       }
     }
 
-    if (selectedSmellFilterType.value !== ''){
+    if (selectedSmellFilterType.value !== "") {
       if (application.kind_of_smell !== selectedSmellFilterType.value) {
         return;
       }
@@ -211,7 +203,9 @@ function filterApplications(dateFilterType = null) {
       application.latitude
     }, ${application.longitude}</td><td> ${
       application.windSpeed
-    } м/c </td><td>  ${formattedDate} ${formattedTime} </td><td> ${application.kind_of_smell ?? "-"}</td>`;
+    } м/c </td><td>  ${formattedDate} ${formattedTime} </td><td> ${
+      application.kind_of_smell ?? "-"
+    }</td>`;
     applicationsList.appendChild(listItem);
 
     const line = L.polyline(coordinatesWithLine, { color: "red" }).addTo(map);
@@ -244,9 +238,7 @@ function filterApplications(dateFilterType = null) {
         <button
           @click="clearFilters()"
           :class="
-            isAnyFilterSelected
-              ? ' visible h-[45px] '
-              : ' h-[0px] p-[0px] invisible'
+            isAnyFilterSelected ? ' visible h-[45px] ' : ' h-[0px] p-[0px] invisible'
           "
           class="transition-all duration-300s"
         >
@@ -254,13 +246,22 @@ function filterApplications(dateFilterType = null) {
         </button>
       </div>
       <div class="flex flex-row justify-evenly">
-        <button @click="filterApplications('Day')" :class="{ selected: selectedDateFilterType === 'Day' }">
+        <button
+          @click="filterApplications('Day')"
+          :class="{ selected: selectedDateFilterType === 'Day' }"
+        >
           За поточний день
         </button>
-        <button @click="filterApplications('Week')" :class="{ selected: selectedDateFilterType === 'Week' }">
+        <button
+          @click="filterApplications('Week')"
+          :class="{ selected: selectedDateFilterType === 'Week' }"
+        >
           За поточний тиждень
         </button>
-        <button @click="filterApplications('Month')" :class="{ selected: selectedDateFilterType === 'Month' }">
+        <button
+          @click="filterApplications('Month')"
+          :class="{ selected: selectedDateFilterType === 'Month' }"
+        >
           За поточний місяць
         </button>
         <button @click="showedInputFilter = !showedInputFilter">
@@ -276,14 +277,14 @@ function filterApplications(dateFilterType = null) {
           @change="filterApplications(selectedDateFilterType)"
         >
           <option value="">За типом сморіду</option>
-          <option value="iod">йод</option>
-          <option value="ammonia">аміак</option>
-          <option value="hydrogen sulfide">сірководень</option>
-          <option value="sulfur">сірка</option>
-          <option value="metallurgical fumes">металургійний гар</option>
-          <option value="burning plastic">горілий пластик</option>
-          <option value="chemicals">хімія</option>
-          <option value="decay">гниль</option>
+          <option value="Йод">Йод</option>
+          <option value="Аміак">Аміак</option>
+          <option value="Сірководень">Сірководень</option>
+          <option value="Сірка">Сірка</option>
+          <option value="Металургійний гар">Металургійний гар</option>
+          <option value="Горілий пластик">Горілий пластик</option>
+          <option value="Хімія">Хімія</option>
+          <option value="Гниль">Гниль</option>
         </select>
       </div>
     </div>

@@ -1,6 +1,6 @@
 const {Telegraf, Markup} = require("telegraf"),
-       BOT_TOKEN = "6120988185:AAHuvW1mxJver4KfHhLqk_HLTTh4nWod5nw"; //airbot
-      //  BOT_TOKEN = "2032874895:AAFdhZ_Qz5eaWFU2JQ6u4mkr9DaLFp0ig9A"; //sladkova
+        BOT_TOKEN = "6120988185:AAHuvW1mxJver4KfHhLqk_HLTTh4nWod5nw"; //airbot
+        // BOT_TOKEN = "2032874895:AAFdhZ_Qz5eaWFU2JQ6u4mkr9DaLFp0ig9A"; //sladkova
 
 const express = require("express");
 const mongoose = require("mongoose");
@@ -11,7 +11,6 @@ const MONGODB_URI = "mongodb://localhost/airbotdb";
 
 const bot = new Telegraf(BOT_TOKEN);
 
-const smells = ['йод', 'аміак', 'сірководень', 'сірка', 'металургійний гар', 'горілий пластик', 'хімія', 'гниль'];
 let selectedSmell = '';
 
 // Підключення до бази даних MongoDB
@@ -32,6 +31,7 @@ const Application = mongoose.model("airdata", {
   windDirection: String,
   kind_of_smell: String,
   timestamp: { type: Date, default: Date.now },
+  // updated: Boolean
 });
 
 const executedRequests = new Map();
@@ -51,20 +51,20 @@ bot.hears(/🌬️ Відчуваю запах шкідливих речовин
   ctx.reply('На що схожий цей сморід?', 
   Markup.inlineKeyboard([
     [
-      Markup.button.callback('Йод', 'smell iod'),
-      Markup.button.callback('Аміак', 'smell ammonia'),
+      Markup.button.callback('Йод', 'smell Йод'),
+      Markup.button.callback('Аміак', 'smell Аміак'),
     ],
     [
-      Markup.button.callback('Сірководень', 'smell hydrogen sulfide'),
-      Markup.button.callback('Сірка', 'smell sulfur'),
+      Markup.button.callback('Сірководень', 'smell Сірководень'),
+      Markup.button.callback('Сірка', 'smell Сірка'),
     ],
     [
-      Markup.button.callback('Металургійний гар', 'smell metallurgical fumes'),
-      Markup.button.callback('Горілий пластик', 'smell burning plastic'),
+      Markup.button.callback('Металургійний гар', 'smell Металургійний гар'),
+      Markup.button.callback('Горілий пластик', 'smell Горілий пластик'),
     ],
     [
-      Markup.button.callback('Хімія', 'smell chemicals'),
-      Markup.button.callback('Гниль', 'smell decay'),
+      Markup.button.callback('Хімія', 'smell Хімія'),
+      Markup.button.callback('Гниль', 'smell Гниль'),
     ],
   ])
   );
@@ -81,7 +81,6 @@ bot.hears(/.*/, (ctx) => {
     source: "pidkazka.jpeg"
   });
 })
-
 
 bot.on('location', async (ctx) => {
   const userId = ctx.from.id;
@@ -144,5 +143,29 @@ function getWindDirection(degrees) {
   const index = Math.round(degrees / 45) % 8;
   return directions[index];
 }
+
+// // Отримання користувачів з бази даних та надсилання повідомлення
+// Application.distinct('userId', {  
+//   $and: [
+//     { userId: { $in: [139317028, 1905119] } },
+//     { updated: { $exists: false } }
+//   ]
+// })
+// .then((userIds) => {
+//   userIds.forEach((userId) => {
+//       const message = 'В новій версії боту з\'явилась можливість вказувати тип смороду! Для оновлення натисніть цю команду: /start';
+//       bot.telegram.sendMessage(userId, message, { parse_mode: 'HTML' });
+//       Application.updateMany({"userId":userId},{updated:"true"})
+//       .then(() => {
+//         console.log(`User ${userId} updated successfully.`);
+//       })
+//       .catch((error) => {
+//         console.error(`Error updating user ${userId}:`, error);
+//       });;
+//     });
+// })
+// .catch((error) => {
+//   console.error(error);
+// });
 
 bot.launch();
