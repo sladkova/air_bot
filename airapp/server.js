@@ -14,6 +14,7 @@ const AirModel = mongoose.model("airdata", {
   longitude: Number,
   windSpeed: Number,
   windDirection: String,
+  kind_of_smell: String,
   timestamp: { type: Date, default: Date.now },
 });
 
