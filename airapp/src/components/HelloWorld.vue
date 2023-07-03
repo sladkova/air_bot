@@ -276,14 +276,14 @@ function filterApplications(dateFilterType = null) {
           @change="filterApplications(selectedDateFilterType)"
         >
           <option value="">За типом сморіду</option>
-          <option value="йод">йод</option>
-          <option value="аміак">аміак</option>
-          <option value="сірководень">сірководень</option>
-          <option value="сірка">сірка</option>
-          <option value="металургійний гар">металургійний гар</option>
-          <option value="горілий пластик">горілий пластик</option>
-          <option value="хімія">хімія</option>
-          <option value="гниль">гниль</option>
+          <option value="iod">йод</option>
+          <option value="ammonia">аміак</option>
+          <option value="hydrogen sulfide">сірководень</option>
+          <option value="sulfur">сірка</option>
+          <option value="metallurgical fumes">металургійний гар</option>
+          <option value="burning plastic">горілий пластик</option>
+          <option value="chemicals">хімія</option>
+          <option value="decay">гниль</option>
         </select>
       </div>
     </div>
