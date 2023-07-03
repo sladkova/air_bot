@@ -170,7 +170,7 @@ function filterApplications(dateFilterType = null) {
     }
 
     if (isFilteredByChoice) {
-      if (!moment(application.timestamp).isBetween(choisedDateRange[0], choisedDateRange[1])) {
+      if (!moment(application.timestamp).isBetween(choisedDateRange.value[0], choisedDateRange.value[1])) {
         return;
       }
     }
