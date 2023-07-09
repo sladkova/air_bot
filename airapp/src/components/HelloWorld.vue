@@ -15,27 +15,6 @@ let fetchedData;
 
 const choisedDateRange = ref();
 
-const presetRanges = ref([
-  { label: "Today", range: [new Date(), new Date()] },
-  {
-    label: "This month",
-    range: [startOfMonth(new Date()), endOfMonth(new Date())],
-  },
-  {
-    label: "Last month",
-    range: [startOfMonth(subMonths(new Date(), 1)), endOfMonth(subMonths(new Date(), 1))],
-  },
-  {
-    label: "This year",
-    range: [startOfYear(new Date()), endOfYear(new Date())],
-  },
-  {
-    label: "This year (slot)",
-    range: [startOfYear(new Date()), endOfYear(new Date())],
-    slot: "yearly",
-  },
-]);
-
 const calculateLineCoordinates = (pointCoordinates, windDirection, lineLength) => {
   const windDirectionRad = windDirection * (Math.PI / 180);
   const endPointLat =
@@ -140,18 +119,16 @@ function filterApplications(dateFilterType = null) {
 
   const applicationsList = document.getElementById("applications-list");
 
-  const lastDayOfPrevWeek = isFilteredBySuggested
-    ? moment(new Date()).subtract(1, `${dateFilterType}`).endOf(`${dateFilterType}`)
-    : null;
+  let dateFrom, dateTo;
+
+  if (isFilteredBySuggested) {
+    dateFrom = moment().startOf(dateFilterType);
+    dateTo = moment().endOf(dateFilterType);
+  }
 
   fetchedData.forEach((application) => {
     if (isFilteredBySuggested) {
-      if (
-        !moment(application.timestamp).isBetween(
-          lastDayOfPrevWeek._d,
-          lastDayOfPrevWeek._i
-        )
-      ) {
+      if (!moment(application.timestamp).isBetween(dateFrom, dateTo)) {
         return;
       }
     }
@@ -227,8 +204,7 @@ function filterApplications(dateFilterType = null) {
 
 <template>
   <div class="flex flex-col gap-y-[20px]">
-    <div id="mapContainer" style="height: 800px; width: 800px"></div>
-    <h1>Заявки</h1>
+    <div id="mapContainer" style="height: 700px; width: 100%"></div>
     <div class="flex flex-col gap-y-[10px]">
       <h3>Фільтри:</h3>
       <div
@@ -245,7 +221,7 @@ function filterApplications(dateFilterType = null) {
           Очистити фільтри
         </button>
       </div>
-      <div class="flex flex-row justify-evenly">
+      <div class="flex flex-row flex-wrap justify-evenly">
         <button
           @click="filterApplications('Day')"
           :class="{ selected: selectedDateFilterType === 'Day' }"
@@ -295,8 +271,10 @@ function filterApplications(dateFilterType = null) {
       <VueDatePicker
         v-model="choisedDateRange"
         range
-        :preset-ranges="presetRanges"
         auto-apply
+        :enable-time-picker="false"
+        locale="uk-UA"
+        format="dd/MM/yyyy"
       >
         <template #yearly="{ label, range, presetDateRange }">
           <span @click="presetDateRange(range)">{{ label }}</span>
@@ -309,7 +287,8 @@ function filterApplications(dateFilterType = null) {
         Знайти
       </button>
     </div>
-    <div class="flex flex-col">
+    <h1>Заявки</h1>
+    <div class="flex flex-col overflow-auto">
       <table id="applications-list">
         <tr id="clarification">
           <td>Користувач</td>
